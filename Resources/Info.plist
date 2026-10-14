@@ -13,6 +13,13 @@
   <key>LSUIElement</key><true/>
   <key>NSPrincipalClass</key><string>NSApplication</string>
   <key>NSHighResolutionCapable</key><true/>
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key><string>app.wakebee.WakeBee.automation</string>
+      <key>CFBundleURLSchemes</key><array><string>wakebee</string></array>
+    </dict>
+  </array>
   <key>SUFeedURL</key><string>https://raw.githubusercontent.com/jswladitya/WakeBee-Releases/main/appcast.xml</string>
   <key>SUPublicEDKey</key><string>OtIBSdx2ZQGuutfbpCsBS/mTh/JbZn8wzXc7muKYrWw=</string>
   <key>SUEnableAutomaticChecks</key><true/>

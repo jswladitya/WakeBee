@@ -32,6 +32,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// `wakebee://` automation. Successful commands stay quiet in the menu bar;
+    /// anything that could not run opens the popover to explain why.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        var failed = false
+        for url in urls {
+            guard let command = SessionCommand(url: url) else {
+                model.session.errorMessage = "WakeBee didn’t recognize the link \(url.absoluteString)."
+                failed = true
+                continue
+            }
+            if !model.perform(command) { failed = true }
+        }
+        // The status item may not exist yet when a link launches the app.
+        if failed { DispatchQueue.main.async { [weak self] in self?.menuBar?.show() } }
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         menuBar?.show()
         // Reopening always stays attached to the existing status item.

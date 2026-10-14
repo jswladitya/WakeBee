@@ -1,6 +1,7 @@
 import AppKit
 import Observation
 import SwiftUI
+import WakeBeeCore
 
 /// Owns presentation independently of SwiftUI view updates. MenuBarExtra's
 /// automatic dismissal can close its window when controls or sheets take focus.
@@ -14,6 +15,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     private var localMonitor: Any?
     private var globalMonitor: Any?
     private var deactivateObserver: NSObjectProtocol?
+    private var countdownTimer: Timer?
     private var stopped = false
 
     init(model: AppModel) {
@@ -42,11 +44,10 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     }
 
     @objc private func toggle() {
-        if NSApp.currentEvent?.type == .rightMouseUp {
-            let menu = NSMenu()
-            let quit = NSMenuItem(title: "Quit WakeBee", action: #selector(quitApp), keyEquivalent: "q")
-            quit.target = self
-            menu.addItem(quit)
+        let event = NSApp.currentEvent
+        if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
+            if popover.isShown { close() }
+            let menu = makeQuickMenu()
             statusItem.menu = menu
             statusItem.button?.performClick(nil)
             statusItem.menu = nil
@@ -58,7 +59,63 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         } else { show() }
     }
 
-    @objc private func quitApp() { NSApp.terminate(nil) }
+    /// Right-click shortcuts: start a common session or manage the current
+    /// one without opening the popover.
+    private func makeQuickMenu() -> NSMenu {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        let session = model.session
+        if let current = session.session {
+            let status: String
+            if let remaining = current.remainingSeconds(at: .now) {
+                status = "\(MenuBarCountdown.string(seconds: remaining)) left"
+            } else if let watched = current.watchedProcess {
+                status = "Awake until \(watched.name) exits"
+            } else {
+                status = "Awake until you stop it"
+            }
+            menu.addItem(ActionMenuItem(status, enabled: false) {})
+            if let end = current.endsAt {
+                let canExtend = model.license.isUnlocked
+                    && end.timeIntervalSince(current.startedAt) < Double(SessionDuration.maximumMinutes) * 60
+                menu.addItem(ActionMenuItem("Add 15 Minutes", enabled: canExtend) { [weak self] in
+                    self?.model.extendSession(by: 15)
+                })
+                menu.addItem(ActionMenuItem("Add 1 Hour", enabled: canExtend) { [weak self] in
+                    self?.model.extendSession(by: 60)
+                })
+            }
+            menu.addItem(.separator())
+            menu.addItem(ActionMenuItem("End Session") { [weak self] in self?.model.end() })
+        } else {
+            let canStart = model.license.isUnlocked && model.updates.allowsStartingSession
+            let header = ActionMenuItem("Keep Awake", enabled: false) {}
+            menu.addItem(header)
+            let presets: [(String, SessionDuration)] = [
+                ("15 Minutes", .minutes(15)), ("30 Minutes", .minutes(30)), ("1 Hour", .minutes(60)),
+                ("2 Hours", .minutes(120)), ("4 Hours", .minutes(240)), ("Until Stopped", .indefinitely),
+            ]
+            for (title, duration) in presets {
+                menu.addItem(ActionMenuItem(title, enabled: canStart) { [weak self] in
+                    guard let self, !self.model.startSession(duration) else { return }
+                    // Show why the session could not start, such as a missing charger.
+                    DispatchQueue.main.async { self.show() }
+                })
+            }
+        }
+        menu.addItem(.separator())
+        menu.addItem(ActionMenuItem("Settings…") { [weak self] in
+            guard let self else { return }
+            self.model.showSettings(.general)
+            // Let the menu finish tracking before presenting the popover.
+            DispatchQueue.main.async { self.show() }
+        })
+        menu.addItem(ActionMenuItem("Quit WakeBee", keyEquivalent: "q") { [weak self] in
+            self?.model.shutdown()
+            NSApp.terminate(nil)
+        })
+        return menu
+    }
 
     func show() {
         guard !stopped, !popover.isShown, let button = statusItem.button else { return }
@@ -66,6 +123,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         // the app, which also raises its background Settings window.
         model.isPopoverVisible = true
         model.closedLid.refresh()
+        if !model.session.isActive { model.refreshWatchCandidates() }
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
         installEventMonitors()
@@ -152,9 +210,11 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         withObservationTracking {
             let active = model.session.isActive
             let button = statusItem.button
-            button?.title = ""
             let icon = active ? activeIcon : idleIcon
             if button?.image !== icon { button?.image = icon }
+            let showsCountdown = active && model.preferences.showsMenuBarCountdown
+                && model.session.session?.endsAt != nil
+            updateCountdown(enabled: showsCountdown)
             let unlocked = model.license.isUnlocked
             button?.setAccessibilityLabel(active ? "WakeBee.app, session active" : unlocked ? "WakeBee.app, inactive" : "WakeBee.app, activation required")
             button?.toolTip = active ? "WakeBee.app — keeping your Mac awake" : unlocked ? "WakeBee.app — start a session" : "WakeBee.app — activate your license"
@@ -163,11 +223,67 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         }
     }
 
+    /// The countdown changes with the clock rather than observed state, so a
+    /// light timer drives it only while it is visible.
+    private func updateCountdown(enabled: Bool) {
+        if enabled, countdownTimer == nil {
+            let timer = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated { self?.renderCountdown() }
+            }
+            timer.tolerance = 1
+            countdownTimer = timer
+            RunLoop.main.add(timer, forMode: .common)
+        } else if !enabled {
+            countdownTimer?.invalidate()
+            countdownTimer = nil
+        }
+        renderCountdown()
+    }
+
+    private func renderCountdown() {
+        guard let button = statusItem.button else { return }
+        let remaining = countdownTimer == nil ? nil : model.session.session?.remainingSeconds(at: .now)
+        let title = remaining.map { " " + MenuBarCountdown.string(seconds: $0) } ?? ""
+        guard button.title != title else { return }
+        if title.isEmpty {
+            button.title = ""
+            button.imagePosition = .imageOnly
+        } else {
+            button.attributedTitle = NSAttributedString(string: title, attributes: [
+                .font: NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize(for: .small), weight: .medium)
+            ])
+            button.imagePosition = .imageLeading
+        }
+    }
+
     func stop() {
         stopped = true
+        countdownTimer?.invalidate()
+        countdownTimer = nil
         popover.close()
         removeEventMonitors()
         NSStatusBar.system.removeStatusItem(statusItem)
+    }
+}
+
+/// Menu items that run a closure. The menu retains each item, and each item
+/// is its own target, so no separate selector plumbing is needed.
+private final class ActionMenuItem: NSMenuItem {
+    private let handler: @MainActor () -> Void
+
+    init(_ title: String, enabled: Bool = true, keyEquivalent: String = "",
+         handler: @escaping @MainActor () -> Void) {
+        self.handler = handler
+        super.init(title: title, action: #selector(run), keyEquivalent: keyEquivalent)
+        target = self
+        isEnabled = enabled
+    }
+
+    @available(*, unavailable)
+    required init(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    @objc private func run() {
+        MainActor.assumeIsolated { handler() }
     }
 }
 

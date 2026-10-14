@@ -16,8 +16,12 @@ final class AppModel {
     var settingsTab = SettingsTab.general
     var showingSettings = false
     var isPopoverVisible = false
+    /// Optional process for the next session; the session ends when it exits.
+    var watchedProcess: WatchedProcess?
+    private(set) var watchCandidates = WatchCandidates()
     private(set) var blockedStartAttempts = 0
     @ObservationIgnored private var sessionMonitor: SessionMonitor?
+    @ObservationIgnored private let processes: any ProcessInspecting
 
     init() {
         let license = LicenseStore(storage: MigratingLicenseStorage())
@@ -25,8 +29,11 @@ final class AppModel {
         let preferences = Preferences()
         self.preferences = preferences
         self.durationDraft = DurationDraft(totalMinutes: preferences.initialMinutes)
+        let processes = SystemProcesses()
+        self.processes = processes
         let session = SessionController(power: PowerAssertionService(),
-                                        keepDisplayAwake: preferences.keepDisplayAwake)
+                                        keepDisplayAwake: preferences.keepDisplayAwake,
+                                        processes: processes)
         session.setLicenseAccess(license.isUnlocked)
         self.session = session
         updates.safetyPolicy = { [weak self] in
@@ -50,15 +57,23 @@ final class AppModel {
     }
 
     func start() {
-        guard updates.allowsStartingSession, !session.isActive, let duration = requestedSession else { return }
+        guard let duration = requestedSession else { return }
+        if startSession(duration, watching: watchedProcess) {
+            preferences.remember(duration)
+            // A PID belongs to one run of a process; never carry it into the next session.
+            watchedProcess = nil
+        }
+    }
+
+    @discardableResult
+    func startSession(_ duration: SessionDuration, watching watched: WatchedProcess? = nil) -> Bool {
+        guard updates.allowsStartingSession, !session.isActive else { return false }
         synchronizeSafeguards()
         session.updatePowerSafety(policy: preferences.sessionPowerPolicy, state: SystemPowerState.snapshot)
-        if session.start(duration) {
-            preferences.remember(duration)
-        } else if session.statusMessage != nil {
-            blockedStartAttempts += 1
-        }
+        let started = session.start(duration, watching: watched)
+        if !started && session.statusMessage != nil { blockedStartAttempts += 1 }
         refreshSession()
+        return started
     }
 
     func end() {
@@ -66,10 +81,54 @@ final class AppModel {
         refreshSession()
     }
 
-    func extend() {
+    func extend() { extendSession(by: 15) }
+
+    func extendSession(by minutes: Int) {
         synchronizeSafeguards()
-        session.extend()
+        session.extend(by: minutes)
         refreshSession()
+    }
+
+    func stopWatchingProcess() {
+        session.watch(nil)
+    }
+
+    func refreshWatchCandidates() {
+        watchCandidates = ProcessCatalog.load(using: processes)
+        // Drop a selection whose process has since exited.
+        if let watchedProcess, !processes.isRunning(watchedProcess) { self.watchedProcess = nil }
+    }
+
+    /// Runs a `wakebee://` command. Returns false when it could not be carried
+    /// out, so the caller can surface the reason in the popover.
+    @discardableResult
+    func perform(_ command: SessionCommand) -> Bool {
+        switch command {
+        case .start(let duration, let pid):
+            // An existing session already keeps the Mac awake; leave it untouched.
+            guard !session.isActive else { return true }
+            return startSession(duration, forPID: pid)
+        case .toggle(let duration, let pid):
+            if session.isActive { end(); return true }
+            return startSession(duration, forPID: pid)
+        case .extend(let minutes):
+            guard session.session?.endsAt != nil, license.isUnlocked else { return false }
+            extendSession(by: minutes)
+            return true
+        case .end:
+            end()
+            return true
+        }
+    }
+
+    private func startSession(_ duration: SessionDuration, forPID pid: Int32?) -> Bool {
+        guard let pid else { return startSession(duration) }
+        guard let process = processes.process(pid: pid) else {
+            session.errorMessage = "No running process has ID \(pid), so no session was started."
+            blockedStartAttempts += 1
+            return false
+        }
+        return startSession(duration, watching: process)
     }
 
     func setDisplayAwake(_ enabled: Bool) {

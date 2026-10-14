@@ -33,6 +33,16 @@ import Testing
         #expect(!restored.requirePowerAdapter)
     }
 
+    @Test func menuBarCountdownIsOptInAndPersists() throws {
+        let suite = "WakeBeeTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = Preferences(defaults: defaults)
+        #expect(!preferences.showsMenuBarCountdown)
+        preferences.showsMenuBarCountdown = true
+        #expect(Preferences(defaults: defaults).showsMenuBarCountdown)
+    }
+
     @Test func upgradePreservesExistingAdapterChoices() throws {
         for savedChoice in [false, true] {
             let suite = "WakeBeeTests.\(UUID().uuidString)"

@@ -12,6 +12,7 @@ final class Preferences {
     var closedLidBatteryMinutes: Int { didSet { defaults.set(closedLidBatteryMinutes, forKey: "closedLidBatteryMinutes") } }
     var endSessionOnLowBattery: Bool { didSet { defaults.set(endSessionOnLowBattery, forKey: "endSessionOnLowBattery") } }
     var requirePowerAdapter: Bool { didSet { defaults.set(requirePowerAdapter, forKey: "requirePowerAdapter") } }
+    var showsMenuBarCountdown: Bool { didSet { defaults.set(showsMenuBarCountdown, forKey: "showsMenuBarCountdown") } }
     private var savedMinutes: Int { didSet { defaults.set(savedMinutes, forKey: "savedMinutes") } }
 
     init(defaults: UserDefaults = .standard) {
@@ -24,7 +25,7 @@ final class Preferences {
                                     "keepDisplayAwake": false,
                                     "allowClosedLidOnBattery": false, "closedLidBatteryCutoff": 30,
                                     "closedLidBatteryMinutes": 30, "endSessionOnLowBattery": true,
-                                    "requirePowerAdapter": true])
+                                    "requirePowerAdapter": true, "showsMenuBarCountdown": false])
         rememberDuration = defaults.bool(forKey: "rememberDuration")
         keepDisplayAwake = defaults.bool(forKey: "keepDisplayAwake")
         savedMinutes = defaults.integer(forKey: "savedMinutes")
@@ -36,6 +37,7 @@ final class Preferences {
         closedLidBatteryMinutes = policy.maximumBatteryMinutes
         endSessionOnLowBattery = defaults.bool(forKey: "endSessionOnLowBattery")
         requirePowerAdapter = defaults.bool(forKey: "requirePowerAdapter")
+        showsMenuBarCountdown = defaults.bool(forKey: "showsMenuBarCountdown")
     }
 
     func setClosedLidBatteryUse(_ enabled: Bool) {

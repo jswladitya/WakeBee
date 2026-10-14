@@ -15,6 +15,15 @@ import Testing
         #expect(!LaunchPresentation.shouldShowPopover(for: event))
     }
 
+    @Test func automationLinkLaunchStaysQuiet() {
+        let event = NSAppleEventDescriptor(
+            eventClass: AEEventClass(kInternetEventClass), eventID: AEEventID(kAEGetURL),
+            targetDescriptor: nil, returnID: AEReturnID(kAutoGenerateReturnID),
+            transactionID: AETransactionID(kAnyTransactionID)
+        )
+        #expect(!LaunchPresentation.shouldShowPopover(for: event))
+    }
+
     private func openEvent() -> NSAppleEventDescriptor {
         NSAppleEventDescriptor(
             eventClass: kCoreEventClass, eventID: kAEOpenApplication,

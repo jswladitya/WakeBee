@@ -20,12 +20,30 @@ struct TimerActivityView: View {
                         } else {
                             Image(systemName: "infinity")
                                 .font(.system(size: 40, weight: .light)).accessibilityHidden(true)
-                            Text("Until you stop it")
+                            Text(current.watchedProcess.map { "Until \($0.name) exits" } ?? "Until you stop it")
                                 .font(.callout).foregroundStyle(.secondary)
                         }
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6)
+                }
+                if let watched = current.watchedProcess {
+                    HStack(spacing: 6) {
+                        Label(current.endsAt == nil ? "Watching \(watched.name) (\(watched.pid))"
+                                                    : "Ends early if \(watched.name) exits",
+                              systemImage: "eye")
+                            .font(.caption).foregroundStyle(.secondary)
+                            .lineLimit(1).truncationMode(.middle)
+                        Button(action: model.stopWatchingProcess) {
+                            Image(systemName: "xmark.circle.fill")
+                        }
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(.tertiary)
+                        .accessibilityLabel("Stop watching \(watched.name)")
+                        .help(current.endsAt == nil ? "Keep the session running until you stop it"
+                                                    : "Keep the session running until its timer ends")
+                    }
+                    .frame(maxWidth: .infinity)
                 }
                 HStack(spacing: 10) {
                     if let end = current.endsAt {

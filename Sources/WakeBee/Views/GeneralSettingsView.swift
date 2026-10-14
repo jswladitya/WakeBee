@@ -23,8 +23,17 @@ struct GeneralSettingsView: View {
                 Toggle("Keep display awake", isOn: Binding(
                     get: { model.session.keepDisplayAwake }, set: model.setDisplayAwake))
                     .help("Keeps the display awake during an active session.")
+                Divider()
+                Toggle("Show time left in menu bar", isOn: $preferences.showsMenuBarCountdown)
+                    .help("Shows the remaining time next to the bee during timed sessions.")
             }
             SessionPowerSettings(preferences: preferences, closedLidEnabled: model.closedLid.isEnabled || model.closedLid.isBusy)
+            SettingsGlassSection(title: "Automation",
+                                 detail: "Scripts and agents can control sessions with wakebee:// links. They follow the same license and power rules, and never turn on closed-lid mode.") {
+                ForEach(AutomationExample.all) { example in
+                    AutomationExampleRow(example: example)
+                }
+            }
             UpdateSettingsView(model: model)
             HStack {
                 Link("WakeBee", destination: URL(string: "https://www.wakebee.app")!)

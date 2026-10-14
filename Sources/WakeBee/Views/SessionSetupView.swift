@@ -29,6 +29,8 @@ struct SessionSetupView: View {
                 .frame(maxWidth: .infinity).padding(.vertical, 6)
             }
 
+            ProcessWatchPicker(model: model)
+
             TimelineView(.periodic(from: .now, by: model.isPopoverVisible && model.sessionMode == .untilTime ? 1 : 3600)) { context in
                 Button(action: model.start) {
                     Label("Start session", systemImage: "play.fill")

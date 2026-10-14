@@ -17,13 +17,16 @@ public final class SessionController {
     public private(set) var allowsNewSessions = true
 
     @ObservationIgnored private let power: any PowerManaging
+    @ObservationIgnored private let processes: any ProcessInspecting
     @ObservationIgnored private let schedulesTimers: Bool
     @ObservationIgnored private var expiryTimer: Timer?
     @ObservationIgnored private var powerPolicy: SessionPowerPolicy = .unrestricted
     @ObservationIgnored private var powerState = ClosedLidPowerState(source: .unknown, batteryPercent: nil)
 
-    public init(power: any PowerManaging, keepDisplayAwake: Bool = false, schedulesTimers: Bool = true) {
+    public init(power: any PowerManaging, keepDisplayAwake: Bool = false, schedulesTimers: Bool = true,
+                processes: any ProcessInspecting = SystemProcesses()) {
         self.power = power
+        self.processes = processes
         self.keepDisplayAwake = keepDisplayAwake
         self.schedulesTimers = schedulesTimers
     }
@@ -49,7 +52,8 @@ public final class SessionController {
     }
 
     @discardableResult
-    public func start(_ duration: SessionDuration, at date: Date = .now) -> Bool {
+    public func start(_ duration: SessionDuration, watching watched: WatchedProcess? = nil,
+                      at date: Date = .now) -> Bool {
         guard allowsNewSessions else {
             errorMessage = "Activate your WakeBee license to start a new session."
             return false
@@ -59,6 +63,10 @@ public final class SessionController {
             return false
         }
         guard session == nil else { return false }
+        if let watched, !processes.isRunning(watched) {
+            errorMessage = "\(watched.name) is no longer running. Choose another process to watch."
+            return false
+        }
         if let reason = powerPolicy.stopReason(for: powerState) {
             switch reason {
             case .lowBattery(let cutoff): errorMessage = "Charge above \(cutoff)% or connect a power adapter to start."
@@ -74,7 +82,7 @@ public final class SessionController {
             case .until(let date): end = date
             case .indefinitely: end = nil
             }
-            session = AwakeSession(startedAt: date, endsAt: end)
+            session = AwakeSession(startedAt: date, endsAt: end, watchedProcess: watched)
             lastEndReason = nil
             errorMessage = nil
             scheduleExpiry()
@@ -119,8 +127,24 @@ public final class SessionController {
         scheduleExpiry()
     }
 
+    /// Attach a process to the running session, or detach with nil.
+    @discardableResult
+    public func watch(_ watched: WatchedProcess?) -> Bool {
+        guard session != nil else { return false }
+        if let watched, !processes.isRunning(watched) {
+            errorMessage = "\(watched.name) is no longer running."
+            return false
+        }
+        session?.watchedProcess = watched
+        errorMessage = nil
+        return true
+    }
+
     public func refresh(at date: Date = .now) {
         if let end = session?.endsAt, date >= end { self.end(reason: .completed) }
+        if let watched = session?.watchedProcess, !processes.isRunning(watched) {
+            self.end(reason: .watchedProcessExited(watched.name))
+        }
     }
 
     private func scheduleExpiry() {

@@ -36,8 +36,34 @@ WakeBee lives in your menu bar and keeps your Mac awake for the work you choose:
 - **A quiet menu bar.** Just the bee when idle, with a green dot while a session is running.
 - **Display control.** Let the display sleep or keep it awake with your session.
 - **Native Mac experience.** SwiftUI and AppKit, Liquid Glass on supported systems, launch at login, and Sparkle updates.
+- **End when the work ends.** Tie a session to a terminal process or app, such as a coding agent, and let your Mac sleep again as soon as it exits.
+- **Automation links.** Scripts and agents can start, extend, and end sessions with `wakebee://` links.
+- **Quick menu and countdown.** Right-click the bee for one-click presets, and optionally show the time left beside it.
 
-Sessions are started manually. WakeBee prevents sleep; it does not monitor your agents or restart their work.
+WakeBee never restarts your agents' work. Watching a process only ends the session when that process exits.
+
+## Automate it
+
+Any script or agent can drive WakeBee with `open`:
+
+```sh
+open "wakebee://start?pid=$$"            # keep awake until this script's shell exits
+open "wakebee://start?minutes=90"        # or hours=1.5
+open "wakebee://start?until=17:30"       # next 5:30 PM, within 24 hours
+open "wakebee://start?hours=4&pid=4321"  # whichever comes first
+open "wakebee://extend?minutes=30"
+open "wakebee://end"
+```
+
+`toggle` takes the same options as `start`. Links follow the same license, battery, and 24-hour rules as the popover, and never turn on closed-lid mode. `start` leaves an existing session untouched. If a link can't run, the popover opens to explain why.
+
+To keep awake for exactly one agent run from an interactive terminal, let the agent take over the watched shell's process ID with `exec`:
+
+```sh
+sh -c 'open "wakebee://start?pid=$$"; exec claude "refactor the billing module"'
+```
+
+You can also pick a running terminal process or app from **End when it exits** in the popover.
 
 ## Get started
 

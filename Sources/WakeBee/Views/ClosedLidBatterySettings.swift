@@ -7,42 +7,40 @@ struct ClosedLidBatterySettings: View {
 
     var body: some View {
         SettingsGlassSection(title: "On battery", detail: batteryExplanation) {
-            Toggle("Keep running on battery", isOn: Binding(
-                get: { preferences.allowClosedLidOnBattery && !preferences.requirePowerAdapter },
-                set: { preferences.setClosedLidBatteryUse($0) }))
-                .accessibilityLabel("Keep running with the lid closed on battery")
-            Text("Applies to your session and closed-lid mode. No other switch is needed.")
-                .font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                if preferences.allowClosedLidOnBattery {
-                    Divider()
-                    HStack {
-                        Text("Stop at battery level")
-                        Spacer()
-                        SettingsMenuPicker(title: "Stop at battery level", selection: $preferences.closedLidBatteryCutoff,
-                                           value: "\(preferences.closedLidBatteryCutoff)%", width: 90) {
-                            ForEach(ClosedLidPolicy.batteryCutoffs, id: \.self) { cutoff in
-                                Text("\(cutoff)%").tag(cutoff)
+            SettingsControlGroup(detail: modeEnabled ? "End the current session before changing battery limits." : nil) {
+                VStack(alignment: .leading, spacing: 10) {
+                    SettingsControlGroup(detail: "Applies to your session and closed-lid mode. No other switch is needed.") {
+                        Toggle("Keep running on battery", isOn: Binding(
+                            get: { preferences.allowClosedLidOnBattery && !preferences.requirePowerAdapter },
+                            set: { preferences.setClosedLidBatteryUse($0) }))
+                            .accessibilityLabel("Keep running with the lid closed on battery")
+                    }
+                    if preferences.allowClosedLidOnBattery {
+                        Divider()
+                        HStack {
+                            Text("Stop at battery level")
+                            Spacer()
+                            SettingsMenuPicker(title: "Stop at battery level", selection: $preferences.closedLidBatteryCutoff,
+                                               value: "\(preferences.closedLidBatteryCutoff)%", width: 90) {
+                                ForEach(ClosedLidPolicy.batteryCutoffs, id: \.self) { cutoff in
+                                    Text("\(cutoff)%").tag(cutoff)
+                                }
                             }
                         }
-                    }
-                    Divider()
-                    HStack {
-                        Text("Time on battery")
-                        Spacer()
-                        SettingsMenuPicker(title: "Maximum time on battery", selection: $preferences.closedLidBatteryMinutes,
-                                           value: durationLabel(preferences.closedLidBatteryMinutes), width: 145) {
-                            ForEach(ClosedLidPolicy.batteryDurations, id: \.self) { minutes in
-                                Text(durationLabel(minutes)).tag(minutes)
+                        Divider()
+                        HStack {
+                            Text("Time on battery")
+                            Spacer()
+                            SettingsMenuPicker(title: "Maximum time on battery", selection: $preferences.closedLidBatteryMinutes,
+                                               value: durationLabel(preferences.closedLidBatteryMinutes), width: 145) {
+                                ForEach(ClosedLidPolicy.batteryDurations, id: \.self) { minutes in
+                                    Text(durationLabel(minutes)).tag(minutes)
+                                }
                             }
                         }
                     }
                 }
-                if modeEnabled {
-                    Text("End the current session before changing battery limits.")
-                        .font(.caption).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+            }
         }
         .disabled(modeEnabled)
     }

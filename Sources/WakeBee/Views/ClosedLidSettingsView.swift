@@ -37,6 +37,7 @@ struct ClosedLidSettingsView: View {
                 DisclosureGroup("How it works") {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("This mode runs only during a session. It starts off each time you open WakeBee.")
+                        Text("For apps that click or type for you, keep the screen on, the lid open, and your Mac unlocked.")
                         Text("When a limit is reached or WakeBee loses its connection, this mode turns off and macOS sleep settings are restored. If the lid is closed, your Mac goes to sleep. Turn it on again when you’re ready.")
                         Text("While plugged in, the battery must stay above 20%. On battery, it runs for up to the time you choose, 4 hours at most. Time on battery adds up within a session; plugging in does not reset it.")
                         Text("Keep your Mac on a hard surface with room for airflow, never in a bag or sleeve, and check that it stays awake before leaving work unattended.")
@@ -65,10 +66,12 @@ struct ClosedLidSettingsView: View {
 
     private var setup: some View {
         SettingsGlassSection(title: "Closed-lid mode") {
-            Label(model.closedLid.isBusy ? "Getting ready" : model.closedLid.needsApproval ? "One step left" : "Keep working with the lid closed", systemImage: "laptopcomputer")
-                .font(.headline)
-            Text(setupDescription).font(.callout).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 4) {
+                Label(model.closedLid.isBusy ? "Getting ready" : model.closedLid.needsApproval ? "One step left" : "Keep working with the lid closed", systemImage: "laptopcomputer")
+                    .font(.headline)
+                Text(setupDescription).font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             if !model.closedLid.signedBuild {
                 Text("Use the signed version of WakeBee to set up this feature.")
                     .font(.caption).foregroundStyle(.secondary)

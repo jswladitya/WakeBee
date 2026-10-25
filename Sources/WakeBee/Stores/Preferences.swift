@@ -22,7 +22,7 @@ final class Preferences {
             defaults.removeObject(forKey: key)
         }
         defaults.register(defaults: ["rememberDuration": true, "savedMinutes": 30,
-                                    "keepDisplayAwake": false,
+                                    "keepDisplayAwake": true,
                                     "allowClosedLidOnBattery": false, "closedLidBatteryCutoff": 30,
                                     "closedLidBatteryMinutes": 30, "endSessionOnLowBattery": true,
                                     "requirePowerAdapter": true,

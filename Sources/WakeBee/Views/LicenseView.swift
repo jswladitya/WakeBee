@@ -15,7 +15,7 @@ struct LicenseView: View {
                 VStack(spacing: 12) {
                     Image(nsImage: NSApplication.shared.applicationIconImage)
                         .resizable().frame(width: 48, height: 48).accessibilityHidden(true)
-                    VStack(spacing: 6) {
+                    VStack(spacing: 4) {
                         Text(license.isUnlocked ? "WakeBee is activated" : "Unlock WakeBee")
                             .font(.title2.weight(.semibold))
                         Text(license.isUnlocked
@@ -84,30 +84,29 @@ struct LicenseView: View {
 
     private var savedLicense: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label(license.isUnlocked ? "Activated" : "Verification needed",
-                      systemImage: license.isUnlocked ? "checkmark.seal.fill" : "key")
-                    .foregroundStyle(license.isUnlocked ? Color.green : Color.secondary)
-                Spacer()
-                Text(license.maskedKey ?? "").monospaced().foregroundStyle(.secondary)
-            }.font(.callout)
-            if let date = license.lastValidatedAt {
-                Text("Last verified \(date, format: .dateTime.month(.abbreviated).day().hour().minute())")
-                    .font(.caption).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Label(license.isUnlocked ? "Activated" : "Verification needed",
+                          systemImage: license.isUnlocked ? "checkmark.seal.fill" : "key")
+                        .foregroundStyle(license.isUnlocked ? Color.green : Color.secondary)
+                    Spacer()
+                    Text(license.maskedKey ?? "").monospaced().foregroundStyle(.secondary)
+                }.font(.callout)
+                if let date = license.lastValidatedAt {
+                    Text("Last verified \(date, format: .dateTime.month(.abbreviated).day().hour().minute())")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
-            HStack {
-                Button(license.isBusy ? "Checking…" : "Verify license") { Task { await license.recheck() } }
-                    .awakeGlassButton().buttonBorderShape(.capsule)
-                    .disabled(license.isBusy)
-                Spacer()
-                Button("Remove license…") { confirmRemoval = true }
-                    .awakeGlassButton().buttonBorderShape(.capsule)
-                    .disabled(license.isBusy || protectionActive)
-            }
-            if protectionActive {
-                Text("End your current session before removing the license.")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+            SettingsControlGroup(detail: protectionActive ? "End your current session before removing the license." : nil) {
+                HStack {
+                    Button(license.isBusy ? "Checking…" : "Verify license") { Task { await license.recheck() } }
+                        .awakeGlassButton().buttonBorderShape(.capsule)
+                        .disabled(license.isBusy)
+                    Spacer()
+                    Button("Remove license…") { confirmRemoval = true }
+                        .awakeGlassButton().buttonBorderShape(.capsule)
+                        .disabled(license.isBusy || protectionActive)
+                }
             }
         }.padding(16).awakeGlassSurface()
     }

@@ -6,7 +6,7 @@ struct ClosedLidControl: View {
     let openSetup: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 Image(systemName: "laptopcomputer")
                     .font(.system(size: 17))

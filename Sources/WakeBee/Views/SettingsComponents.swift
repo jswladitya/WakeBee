@@ -25,14 +25,31 @@ struct SettingsGlassSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title).font(.headline).accessibilityAddTraits(.isHeader)
                 .padding(.horizontal, 4)
-            VStack(alignment: .leading, spacing: 10) { content }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .awakeGlassSurface()
+            VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 10) { content }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .awakeGlassSurface()
+                if let detail {
+                    Text(detail).font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 4)
+                }
+            }
+        }
+    }
+}
+
+struct SettingsControlGroup<Content: View>: View {
+    let detail: String?
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            content
             if let detail {
                 Text(detail).font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 4)
             }
         }
     }

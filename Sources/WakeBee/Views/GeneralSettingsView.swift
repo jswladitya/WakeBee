@@ -20,9 +20,12 @@ struct GeneralSettingsView: View {
             SettingsGlassSection(title: "Sessions") {
                 Toggle("Remember last duration", isOn: $preferences.rememberDuration)
                 Divider()
-                Toggle("Keep display awake", isOn: Binding(
-                    get: { model.session.keepDisplayAwake }, set: model.setDisplayAwake))
-                    .help("Keeps the display awake during an active session.")
+                SettingsControlGroup(detail: "Recommended for agents that click and type (computer use).") {
+                    Toggle("Keep screen on", isOn: Binding(
+                        get: { model.session.keepDisplayAwake }, set: model.setDisplayAwake))
+                        .help("Stops the screen from turning off automatically during a session.")
+                        .accessibilityHint("Recommended for agents that click and type (computer use).")
+                }
             }
             SettingsGlassSection(title: "Menu bar", detail: "Monochrome matches the system icons. A green dot appears while a session is running.") {
                 HStack {

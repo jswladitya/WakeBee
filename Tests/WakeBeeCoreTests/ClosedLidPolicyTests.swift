@@ -25,20 +25,27 @@ import Testing
         }
     }
 
-    @Test(arguments: [Int.min, -1, 14, 31, 121, Int.max])
+    @Test(arguments: [Int.min, -1, 14, 31, 121, 181, 241, 300, 24 * 60, Int.max])
     func invalidDurationsCannotDisableOrOverflowTimeLimit(_ minutes: Int) {
         #expect(throws: ClosedLidStopReason.invalidPolicy) {
             try ClosedLidPolicy(allowsBattery: true, minimumBatteryPercent: 30, maximumBatteryMinutes: minutes)
         }
     }
 
-    @Test func noBatteryTimeLimitRequiresTheExplicitSentinel() throws {
-        let policy = try ClosedLidPolicy(allowsBattery: true, minimumBatteryPercent: 45,
-                                        maximumBatteryMinutes: ClosedLidPolicy.noBatteryTimeLimit)
-        #expect(!policy.hasBatteryTimeLimit)
-        #expect(policy.maximumBatteryMinutes == 0)
-        #expect(ClosedLidPolicy.standard.hasBatteryTimeLimit)
-        #expect(policy.stopReason(for: .init(source: .battery, batteryPercent: 45)) == .lowBattery(45))
+    @Test func batteryTimeAlwaysHasAFourHourCeiling() throws {
+        #expect(ClosedLidPolicy.batteryDurations.max() == 240)
+        #expect(ClosedLidPolicy.batteryDurations.last == 240)
+        // Saved by earlier builds as "no battery timer".
+        let legacy = try ClosedLidPolicy(allowsBattery: true, minimumBatteryPercent: 45,
+                                        maximumBatteryMinutes: ClosedLidPolicy.legacyNoBatteryTimeLimit)
+        #expect(legacy.maximumBatteryMinutes == 240)
+        #expect(legacy.stopReason(for: .init(source: .battery, batteryPercent: 45)) == .lowBattery(45))
+    }
+
+    @Test func batteryLimitMessagesUseReadableUnits() {
+        #expect(ClosedLidStopReason.batteryTimeLimit(240).errorDescription?.contains("4-hour limit on battery") == true)
+        #expect(ClosedLidStopReason.batteryTimeLimit(60).errorDescription?.contains("1-hour limit") == true)
+        #expect(ClosedLidStopReason.batteryTimeLimit(90).errorDescription?.contains("90-minute limit") == true)
     }
 
     @Test func unknownBatteryOrThermalPressureNeverActivates() throws {

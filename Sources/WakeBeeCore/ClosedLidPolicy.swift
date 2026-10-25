@@ -3,14 +3,14 @@ import Foundation
 /// Validated in both the app and the privileged helper. Battery use is opt-in.
 public struct ClosedLidPolicy: Equatable, Sendable {
     public static let batteryCutoffs = Array(stride(from: 20, through: 80, by: 5))
-    public static let batteryDurations = [15, 30, 45, 60, 90, 120]
-    /// Explicit opt-out for the battery-only budget; the overall lease cap remains.
-    public static let noBatteryTimeLimit = 0
+    /// Battery time is always limited. The longest choice is the hard ceiling.
+    public static let batteryDurations = [15, 30, 45, 60, 90, 120, 180, 240]
+    /// Earlier builds saved 0 for "no battery timer". It now means the ceiling.
+    static let legacyNoBatteryTimeLimit = 0
     public static let standard = ClosedLidPolicy()
     public let allowsBattery: Bool
     public let minimumBatteryPercent: Int
     public let maximumBatteryMinutes: Int
-    public var hasBatteryTimeLimit: Bool { maximumBatteryMinutes != Self.noBatteryTimeLimit }
 
     private init() {
         allowsBattery = false
@@ -19,12 +19,13 @@ public struct ClosedLidPolicy: Equatable, Sendable {
     }
 
     public init(allowsBattery: Bool, minimumBatteryPercent: Int, maximumBatteryMinutes: Int) throws {
-        guard Self.batteryCutoffs.contains(minimumBatteryPercent),
-              maximumBatteryMinutes == Self.noBatteryTimeLimit || Self.batteryDurations.contains(maximumBatteryMinutes)
+        let minutes = maximumBatteryMinutes == Self.legacyNoBatteryTimeLimit
+            ? Self.batteryDurations[Self.batteryDurations.count - 1] : maximumBatteryMinutes
+        guard Self.batteryCutoffs.contains(minimumBatteryPercent), Self.batteryDurations.contains(minutes)
         else { throw ClosedLidStopReason.invalidPolicy }
         self.allowsBattery = allowsBattery
         self.minimumBatteryPercent = minimumBatteryPercent
-        self.maximumBatteryMinutes = maximumBatteryMinutes
+        self.maximumBatteryMinutes = minutes
     }
 
     public func stopReason(for power: ClosedLidPowerState) -> ClosedLidStopReason? {
@@ -56,7 +57,7 @@ public struct ClosedLidPowerState: Sendable {
 }
 
 public enum ClosedLidStopReason: LocalizedError, Equatable, Sendable {
-    case powerRequired, powerUnknown, thermalPressure, timeLimit, contactLost, invalidPolicy
+    case powerRequired, powerUnknown, thermalPressure, contactLost, invalidPolicy
     case lowBattery(Int), batteryTimeLimit(Int)
 
     public var errorDescription: String? {
@@ -64,11 +65,11 @@ public enum ClosedLidStopReason: LocalizedError, Equatable, Sendable {
         case .powerRequired: "Power was disconnected. Connect a charger or allow battery use in Closed Lid settings."
         case .powerUnknown: "Battery or power status is unavailable. Keep the lid open and try again."
         case .thermalPressure: "Your Mac needs to cool down. Keep the lid open and turn this mode on again once it has cooled."
-        case .timeLimit: "Closed-lid mode reached its 4-hour limit. Turn it on again when you’re ready."
         case .contactLost: "WakeBee lost its connection. Keep the lid open and turn closed-lid mode on again."
         case .invalidPolicy: "Choose a battery level from 20–80% and one of the available time limits."
         case .lowBattery(let cutoff): "Battery reached \(cutoff)%. Connect a charger before turning closed-lid mode on again."
-        case .batteryTimeLimit(let minutes): "Closed-lid mode reached its \(minutes)-minute limit on battery."
+        case .batteryTimeLimit(let minutes):
+            "Closed-lid mode reached its \(minutes % 60 == 0 ? "\(minutes / 60)-hour" : "\(minutes)-minute") limit on battery."
         }
     }
 }

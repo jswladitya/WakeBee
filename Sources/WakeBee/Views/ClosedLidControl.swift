@@ -71,7 +71,7 @@ struct ClosedLidControl: View {
 
     private var statusDetail: String {
         if model.closedLid.needsApproval { return "Allow WakeBee in System Settings to continue." }
-        if confirmed { return "Stays awake within your battery and time limits." }
+        if confirmed { return "Stays awake until your session ends, within your battery limits." }
         if model.closedLid.isBusy { return "Keep the lid open for a moment while WakeBee gets ready." }
         if model.closedLid.canRepair { return "Keep the lid open, then try setup again." }
         if let issue = model.closedLid.issueMessage { return issue }

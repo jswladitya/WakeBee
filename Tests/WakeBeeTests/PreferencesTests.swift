@@ -42,4 +42,28 @@ import Testing
             #expect(Preferences(defaults: defaults).requirePowerAdapter == savedChoice)
         }
     }
+
+    @Test func legacyNoBatteryTimerUpgradesToFourHours() throws {
+        let suite = "WakeBeeTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(true, forKey: "allowClosedLidOnBattery")
+        defaults.set(0, forKey: "closedLidBatteryMinutes")
+        let preferences = Preferences(defaults: defaults)
+        #expect(preferences.closedLidBatteryMinutes == 240)
+        #expect(preferences.closedLidPolicy.maximumBatteryMinutes == 240)
+        #expect(preferences.closedLidPolicy.allowsBattery)
+    }
+
+    @Test func menuBarIconDefaultsToColorAndPersistsChoice() throws {
+        let suite = "WakeBeeTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let fresh = Preferences(defaults: defaults)
+        #expect(fresh.menuBarIconStyle == .color)
+        fresh.menuBarIconStyle = .monochrome
+        #expect(Preferences(defaults: defaults).menuBarIconStyle == .monochrome)
+        defaults.set("sparkly", forKey: "menuBarIconStyle")
+        #expect(Preferences(defaults: defaults).menuBarIconStyle == .color)
+    }
 }

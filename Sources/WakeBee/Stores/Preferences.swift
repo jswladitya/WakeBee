@@ -12,6 +12,7 @@ final class Preferences {
     var closedLidBatteryMinutes: Int { didSet { defaults.set(closedLidBatteryMinutes, forKey: "closedLidBatteryMinutes") } }
     var endSessionOnLowBattery: Bool { didSet { defaults.set(endSessionOnLowBattery, forKey: "endSessionOnLowBattery") } }
     var requirePowerAdapter: Bool { didSet { defaults.set(requirePowerAdapter, forKey: "requirePowerAdapter") } }
+    var menuBarIconStyle: MenuBarIconStyle { didSet { defaults.set(menuBarIconStyle.rawValue, forKey: "menuBarIconStyle") } }
     private var savedMinutes: Int { didSet { defaults.set(savedMinutes, forKey: "savedMinutes") } }
 
     init(defaults: UserDefaults = .standard) {
@@ -24,7 +25,8 @@ final class Preferences {
                                     "keepDisplayAwake": false,
                                     "allowClosedLidOnBattery": false, "closedLidBatteryCutoff": 30,
                                     "closedLidBatteryMinutes": 30, "endSessionOnLowBattery": true,
-                                    "requirePowerAdapter": true])
+                                    "requirePowerAdapter": true,
+                                    "menuBarIconStyle": MenuBarIconStyle.color.rawValue])
         rememberDuration = defaults.bool(forKey: "rememberDuration")
         keepDisplayAwake = defaults.bool(forKey: "keepDisplayAwake")
         savedMinutes = defaults.integer(forKey: "savedMinutes")
@@ -36,6 +38,7 @@ final class Preferences {
         closedLidBatteryMinutes = policy.maximumBatteryMinutes
         endSessionOnLowBattery = defaults.bool(forKey: "endSessionOnLowBattery")
         requirePowerAdapter = defaults.bool(forKey: "requirePowerAdapter")
+        menuBarIconStyle = defaults.string(forKey: "menuBarIconStyle").flatMap { MenuBarIconStyle(rawValue: $0) } ?? .color
     }
 
     func setClosedLidBatteryUse(_ enabled: Bool) {
@@ -62,5 +65,16 @@ final class Preferences {
     func remember(_ duration: SessionDuration) {
         guard rememberDuration else { return }
         if case .minutes(let minutes) = duration { savedMinutes = minutes }
+    }
+}
+
+enum MenuBarIconStyle: String, CaseIterable, Identifiable {
+    case color, monochrome
+    var id: Self { self }
+    var label: String {
+        switch self {
+        case .color: "Color"
+        case .monochrome: "Monochrome"
+        }
     }
 }

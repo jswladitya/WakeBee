@@ -30,7 +30,6 @@ struct ClosedLidBatterySettings: View {
                         Text("Time on battery")
                         Spacer()
                         Picker("Maximum time on battery", selection: $preferences.closedLidBatteryMinutes) {
-                            Text("Use 4-hour limit").tag(ClosedLidPolicy.noBatteryTimeLimit)
                             ForEach(ClosedLidPolicy.batteryDurations, id: \.self) { minutes in
                                 Text(durationLabel(minutes)).tag(minutes)
                             }
@@ -51,17 +50,14 @@ struct ClosedLidBatterySettings: View {
         guard preferences.allowClosedLidOnBattery else {
             return "Closed-lid mode turns off when you unplug."
         }
-        if !preferences.closedLidPolicy.hasBatteryTimeLimit {
-            return "Turns off at \(preferences.closedLidBatteryCutoff)% battery or at the 4-hour limit."
-        }
-        return "Turns off at \(preferences.closedLidBatteryCutoff)% battery or after \(durationLabel(preferences.closedLidBatteryMinutes)) on battery, whichever comes first."
+        return "Turns off at \(preferences.closedLidBatteryCutoff)% battery or after \(durationLabel(preferences.closedLidBatteryMinutes)) on battery, whichever comes first. On a charger, it lasts as long as your session."
     }
 
     private func durationLabel(_ minutes: Int) -> String {
         switch minutes {
         case 60: "1 hour"
         case 90: "1½ hours"
-        case 120: "2 hours"
+        case let minutes where minutes % 60 == 0: "\(minutes / 60) hours"
         default: "\(minutes) minutes"
         }
     }

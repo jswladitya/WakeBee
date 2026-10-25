@@ -5,10 +5,19 @@ import IOKit
 /// after an explicit preference exists, so its omission is not a read failure.
 public enum SystemSleepState {
     public static func readDisabled() throws -> Bool {
+        try readRootDomain("SleepDisabled")
+    }
+
+    /// True only while a built-in lid is reported closed. Desktops have no such property.
+    public static func readLidClosed() throws -> Bool {
+        try readRootDomain("AppleClamshellState")
+    }
+
+    private static func readRootDomain(_ key: String) throws -> Bool {
         let root = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPMrootDomain"))
         guard root != IO_OBJECT_NULL else { throw ReadError.unavailable }
         defer { IOObjectRelease(root) }
-        let value = IORegistryEntryCreateCFProperty(root, "SleepDisabled" as CFString,
+        let value = IORegistryEntryCreateCFProperty(root, key as CFString,
                                                   kCFAllocatorDefault, 0)?.takeRetainedValue()
         return try decode(value)
     }

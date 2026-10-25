@@ -24,6 +24,17 @@ struct GeneralSettingsView: View {
                     get: { model.session.keepDisplayAwake }, set: model.setDisplayAwake))
                     .help("Keeps the display awake during an active session.")
             }
+            SettingsGlassSection(title: "Menu bar", detail: "Monochrome matches the system icons. A green dot appears while a session is running.") {
+                HStack {
+                    Text("Icon")
+                    Spacer()
+                    Picker("Menu bar icon", selection: $preferences.menuBarIconStyle) {
+                        ForEach(MenuBarIconStyle.allCases) { style in
+                            Text(style.label).tag(style)
+                        }
+                    }.labelsHidden().frame(width: 145)
+                }
+            }
             SessionPowerSettings(preferences: preferences, closedLidEnabled: model.closedLid.isEnabled || model.closedLid.isBusy)
             UpdateSettingsView(model: model)
             HStack {

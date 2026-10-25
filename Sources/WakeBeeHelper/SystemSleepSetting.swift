@@ -1,8 +1,11 @@
 import WakeBeeCore
+import WakeBeeHelperProtocol
 import Darwin
 import Foundation
+import OSLog
 
 final class SystemSleepSetting: SleepSettingManaging {
+    private let log = Logger(subsystem: HelperIdentity.service, category: "Sleep")
     private let folder = "/private/var/db/app.wakebee.helper"
     private var file: URL { URL(fileURLWithPath: folder).appendingPathComponent("recovery.json") }
 
@@ -43,6 +46,16 @@ final class SystemSleepSetting: SleepSettingManaging {
     }
     func clearRecovery() throws {
         if try validateFileIfPresent() { try FileManager.default.removeItem(at: file) }
+    }
+    func sleepIfLidClosed() {
+        // An unreadable lid state (including desktops) never forces sleep.
+        guard (try? SystemSleepState.readLidClosed()) == true else { return }
+        do {
+            _ = try pmset(["sleepnow"])
+            log.notice("Safety stop with the lid closed; requested system sleep")
+        } catch {
+            log.error("Safety stop with the lid closed; sleep request failed: \(error.localizedDescription, privacy: .public)")
+        }
     }
     private func prepareDirectory() throws {
         guard geteuid() == 0 else { throw SettingError.journal }

@@ -33,7 +33,7 @@ WakeBee lives in your menu bar and keeps your Mac awake for the work you choose:
 - **Three ways to stay awake.** Set a timer, pick an end time, or run until you stop.
 - **Optional closed-lid mode.** Continue a session with your MacBook closed after a one-time helper setup.
 - **Battery controls.** Require a charger, choose a battery cutoff, and set a limit for closed-lid use on battery.
-- **A quiet menu bar.** Just the bee when idle, with a green dot while a session is running.
+- **A quiet menu bar.** Just the bee when idle, with a green dot while a session is running. Choose the color bee or a monochrome one that matches the system icons.
 - **Display control.** Let the display sleep or keep it awake with your session.
 - **Native Mac experience.** SwiftUI and AppKit, Liquid Glass on supported systems, launch at login, and Sparkle updates.
 
@@ -62,7 +62,7 @@ Upgrading from version 0.14 or earlier? Follow the [one-time migration instructi
 
 After setup, use the closed-lid switch for future sessions. Battery use is optional and configured in **Settings → Closed Lid**.
 
-Closed-lid mode has a four-hour continuous limit, battery and thermal checks, and a watchdog that restores the previous sleep setting if contact with the app is lost. Use a ventilated surface. Behavior can vary by Mac and macOS version, so test a short session on your own hardware before relying on unattended work. The green menu-bar dot means a session is running; the closed-lid card confirms whether it is ready to close.
+On a charger, closed-lid mode lasts as long as your session. On battery it stops at your battery cutoff or after the time you choose, 4 hours at most. It also stops if your Mac gets too warm, and a watchdog restores the previous sleep setting if contact with the app is lost. When it stops with the lid closed, your Mac goes to sleep. Use a ventilated surface, never a bag or sleeve. Behavior can vary by Mac and macOS version, so test a short session on your own hardware before relying on unattended work. The green menu-bar dot means a session is running; the closed-lid card confirms whether it is ready to close.
 
 ## Build from source
 

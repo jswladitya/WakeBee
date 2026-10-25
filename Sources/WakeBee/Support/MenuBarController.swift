@@ -9,8 +9,10 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     private let model: AppModel
     private let statusItem: NSStatusItem
     private let popover = NSPopover()
-    private let idleIcon = MenuBarStatusIcon.make(active: false)
-    private let activeIcon = MenuBarStatusIcon.make(active: true)
+    private var iconStyle: MenuBarIconStyle
+    private var idleIcon: NSImage
+    private var activeIcon: NSImage
+    private let activityDot = MenuBarActivityDot()
     private var localMonitor: Any?
     private var globalMonitor: Any?
     private var deactivateObserver: NSObjectProtocol?
@@ -19,6 +21,9 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     init(model: AppModel) {
         self.model = model
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        iconStyle = model.preferences.menuBarIconStyle
+        idleIcon = MenuBarStatusIcon.make(active: false, style: iconStyle)
+        activeIcon = MenuBarStatusIcon.make(active: true, style: iconStyle)
         super.init()
 
         // SwiftUI supplies the natural content height. Keep one width and let
@@ -38,6 +43,10 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         statusItem.button?.imagePosition = .imageOnly
         statusItem.button?.title = ""
         statusItem.button?.image = idleIcon
+        activityDot.isHidden = true
+        // The image stays centered as the item resizes, so keep the dot's right margin.
+        activityDot.autoresizingMask = [.minXMargin, .minYMargin, .maxYMargin]
+        statusItem.button?.addSubview(activityDot)
         observeStatus()
     }
 
@@ -151,10 +160,18 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         guard !stopped else { return }
         withObservationTracking {
             let active = model.session.isActive
+            let style = model.preferences.menuBarIconStyle
+            if style != iconStyle {
+                iconStyle = style
+                idleIcon = MenuBarStatusIcon.make(active: false, style: style)
+                activeIcon = MenuBarStatusIcon.make(active: true, style: style)
+            }
             let button = statusItem.button
             button?.title = ""
             let icon = active ? activeIcon : idleIcon
             if button?.image !== icon { button?.image = icon }
+            activityDot.isHidden = !(active && style == .monochrome)
+            if !activityDot.isHidden, let button { activityDot.frame = MenuBarStatusIcon.activityDotFrame(in: button) }
             let unlocked = model.license.isUnlocked
             button?.setAccessibilityLabel(active ? "WakeBee.app, session active" : unlocked ? "WakeBee.app, inactive" : "WakeBee.app, activation required")
             button?.toolTip = active ? "WakeBee.app — keeping your Mac awake" : unlocked ? "WakeBee.app — start a session" : "WakeBee.app — activate your license"

@@ -31,15 +31,15 @@ struct ClosedLidSettingsView: View {
                                      modeEnabled: model.closedLid.isActive || model.closedLid.isBusy)
                 .onChange(of: model.preferences.sessionPowerPolicy) { model.refreshPowerSettings() }
             VStack(alignment: .leading, spacing: 12) {
-                Text("Closed-lid mode runs for up to 4 hours at a time and turns off if your Mac gets too warm.")
+                Text("On a charger, closed-lid mode lasts as long as your session. It turns off if your Mac gets too warm or reaches a battery limit.")
                     .font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 DisclosureGroup("How it works") {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("This mode runs only during a session. It starts off each time you open WakeBee.")
-                        Text("When a limit is reached or WakeBee loses its connection, this mode turns off and macOS sleep settings are restored. Turn it on again when you’re ready.")
-                        Text("While plugged in, the battery must stay above 20%. Time spent on battery adds up within a session; plugging in does not reset it.")
-                        Text("Keep your Mac on a hard surface with room for airflow, and check that it stays awake before leaving work unattended.")
+                        Text("When a limit is reached or WakeBee loses its connection, this mode turns off and macOS sleep settings are restored. If the lid is closed, your Mac goes to sleep. Turn it on again when you’re ready.")
+                        Text("While plugged in, the battery must stay above 20%. On battery, it runs for up to the time you choose, 4 hours at most. Time on battery adds up within a session; plugging in does not reset it.")
+                        Text("Keep your Mac on a hard surface with room for airflow, never in a bag or sleeve, and check that it stays awake before leaving work unattended.")
                     }
                     .font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true).padding(.top, 10)

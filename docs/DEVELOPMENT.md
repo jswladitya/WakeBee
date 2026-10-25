@@ -75,7 +75,7 @@ For UI changes, build the bundle and check all three session modes and the affec
 - XPC authenticates the app's identifier and signing team. The helper exposes bounded operations, not arbitrary commands.
 - A durable recovery journal records the previous setting before it changes.
 - Leases expire after 30 seconds without renewal. The helper checks limits every second and restores the prior setting when no live lease remains.
-- Closed-lid sessions stop at four continuous hours, or earlier for battery, thermal, power-reading, or connection limits. Failed restoration keeps the journal for retry.
+- On a charger, closed-lid sessions last while the app renews the lease. Battery use has a cumulative limit of at most four hours; plugging in pauses that budget without resetting it. Battery, thermal, power-reading, and connection limits can stop a session earlier. Failed restoration keeps the journal for retry.
 - Relaunch does not restart a session or automatically enable closed-lid mode.
 
 Keep these guarantees intact when changing the helper, session controller, or shutdown flow.

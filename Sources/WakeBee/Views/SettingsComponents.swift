@@ -52,3 +52,34 @@ struct SettingsValueRow: View {
         .accessibilityElement(children: .combine)
     }
 }
+
+/// Native selection semantics on the panel's shared glass surface.
+struct SettingsMenuPicker<Selection: Hashable, Options: View>: View {
+    let title: String
+    @Binding var selection: Selection
+    let value: String
+    let width: CGFloat
+    @ViewBuilder let options: Options
+
+    var body: some View {
+        Menu {
+            Picker(title, selection: $selection) { options }
+                .pickerStyle(.inline)
+                .labelsHidden()
+                // Menu checkmarks must not inherit the page's glass switch style.
+                .toggleStyle(.automatic)
+        } label: {
+            Text(value)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.visible)
+        .padding(.horizontal, 12)
+        .frame(height: 30)
+        .frame(width: width)
+        .awakeGlassSurface(cornerRadius: 15)
+        .accessibilityLabel(title)
+        .accessibilityValue(value)
+    }
+}

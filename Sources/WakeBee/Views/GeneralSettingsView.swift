@@ -28,11 +28,12 @@ struct GeneralSettingsView: View {
                 HStack {
                     Text("Icon")
                     Spacer()
-                    Picker("Menu bar icon", selection: $preferences.menuBarIconStyle) {
+                    SettingsMenuPicker(title: "Menu bar icon", selection: $preferences.menuBarIconStyle,
+                                       value: preferences.menuBarIconStyle.label, width: 145) {
                         ForEach(MenuBarIconStyle.allCases) { style in
                             Text(style.label).tag(style)
                         }
-                    }.labelsHidden().frame(width: 145)
+                    }
                 }
             }
             SessionPowerSettings(preferences: preferences, closedLidEnabled: model.closedLid.isEnabled || model.closedLid.isBusy)

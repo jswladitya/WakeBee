@@ -17,12 +17,12 @@ struct SessionPowerSettings: View {
             HStack {
                 Text("Battery cutoff")
                 Spacer()
-                Picker("Battery cutoff", selection: $preferences.closedLidBatteryCutoff) {
+                SettingsMenuPicker(title: "Battery cutoff", selection: $preferences.closedLidBatteryCutoff,
+                                   value: "\(preferences.closedLidBatteryCutoff)%", width: 90) {
                     ForEach(ClosedLidPolicy.batteryCutoffs, id: \.self) { cutoff in
                         Text("\(cutoff)%").tag(cutoff)
                     }
                 }
-                .labelsHidden().frame(width: 90)
                 .disabled(closedLidEnabled)
             }
             if closedLidEnabled {

@@ -19,21 +19,23 @@ struct ClosedLidBatterySettings: View {
                     HStack {
                         Text("Stop at battery level")
                         Spacer()
-                        Picker("Stop at battery level", selection: $preferences.closedLidBatteryCutoff) {
+                        SettingsMenuPicker(title: "Stop at battery level", selection: $preferences.closedLidBatteryCutoff,
+                                           value: "\(preferences.closedLidBatteryCutoff)%", width: 90) {
                             ForEach(ClosedLidPolicy.batteryCutoffs, id: \.self) { cutoff in
                                 Text("\(cutoff)%").tag(cutoff)
                             }
-                        }.labelsHidden().frame(width: 90)
+                        }
                     }
                     Divider()
                     HStack {
                         Text("Time on battery")
                         Spacer()
-                        Picker("Maximum time on battery", selection: $preferences.closedLidBatteryMinutes) {
+                        SettingsMenuPicker(title: "Maximum time on battery", selection: $preferences.closedLidBatteryMinutes,
+                                           value: durationLabel(preferences.closedLidBatteryMinutes), width: 145) {
                             ForEach(ClosedLidPolicy.batteryDurations, id: \.self) { minutes in
                                 Text(durationLabel(minutes)).tag(minutes)
                             }
-                        }.labelsHidden().frame(width: 145)
+                        }
                     }
                 }
                 if modeEnabled {

@@ -1,9 +1,12 @@
-# WakeBee 0.15.4
+# WakeBee 0.15.5
 
-The menu-bar icon now takes only the space it needs.
+Longer closed-lid sessions on a charger and a quieter menu bar.
 
-- When no session is running, only the bee appears, without an empty gap beside it.
-- Starting a session adds the green dot and its space. Ending the session removes both.
+- **Keep working on a charger:** closed-lid mode lasts as long as your session. Select **Unlimited** to run until you stop, without the previous four-hour cutoff.
+- **Battery limits remain:** choose up to four hours, including new three-hour and four-hour options. Plugging in pauses the battery timer without resetting it. Existing battery-cutoff, temperature, and connection safeguards remain active.
+- **A quieter menu bar:** choose a color or monochrome bee in **Settings → General**. The green dot still indicates an active session.
+- **Consistent settings:** icon and battery dropdowns now use WakeBee’s glass controls.
+- **Closed-lid recovery:** after a safety stop restores normal sleep settings, the helper requests sleep if the lid is closed.
 
 WakeBee 0.15.x users can update through **Check for Updates**. End your session and keep the lid open during installation.
 
@@ -14,7 +17,7 @@ This release requires a manual installation because the app’s identity has cha
 1. Keep the lid open. In your existing app, end any running session.
 2. If you previously set up closed-lid mode, go to **Settings → Closed Lid → Advanced → Remove closed-lid setup**. Wait for it to finish before continuing.
 3. Turn off **Launch at login** in the old app, then quit it. Keep a backup until migration is complete.
-4. Download **WakeBee-0.15.4.dmg**, drag **WakeBee.app** into **Applications**, and open it there.
+4. Download **WakeBee-0.15.5.dmg**, drag **WakeBee.app** into **Applications**, and open it there.
 5. Your saved preferences and Polar activation are imported on first launch. Allow Keychain access if macOS asks, and connect to the internet to verify the license. If access is denied, enter your existing license key again.
 6. Set up closed-lid mode again if you use it, approve WakeBee in System Settings when prompted, and enable Launch at login again if desired.
 
